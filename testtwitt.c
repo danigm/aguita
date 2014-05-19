@@ -26,4 +26,6 @@ int main (int argc, char *argv[])
     char *home = h2o_xs_oauth_get (oauth, "https://api.twitter.com/1.1/statuses/home_timeline.json");
 
     g_printf ("\n%s\n", home);
+
+    g_object_unref (G_OBJECT (oauth));
 }

@@ -1,9 +1,11 @@
 #include "h2oxs.h"
 #include "h2oxs-win.h"
+#include "h2oxs-social.h"
 #include <gtk/gtk.h>
 
 void show_no_account (H2OxsWindow *w);
-
+void show_timeline (H2OxsWindow *w, H2OxsOauth *oauth);
+void load_accounts (H2OxsWindow *w);
 
 
 struct _H2OxsWindow
@@ -15,6 +17,9 @@ struct _H2OxsWindow
     GtkWidget *search_button;
 
     GtkWidget *no_account;
+
+    // The list of H2OxsOauth
+    GList *accounts;
 };
 
 
@@ -26,6 +31,14 @@ struct _H2OxsWindowClass
 G_DEFINE_TYPE(H2OxsWindow, h2o_xs_window,
               GTK_TYPE_APPLICATION_WINDOW);
 
+
+static void
+h2o_xs_window_dispose (GObject *object)
+{
+    H2OxsWindow *win = H2O_XS_WINDOW (object);
+    G_OBJECT_CLASS (h2o_xs_window_parent_class)->dispose (object);
+}
+
 static void
 h2o_xs_window_init (H2OxsWindow *app)
 {
@@ -34,6 +47,8 @@ h2o_xs_window_init (H2OxsWindow *app)
 static void
 h2o_xs_window_class_init (H2OxsWindowClass *class)
 {
+    GObjectClass *object_class = G_OBJECT_CLASS (class);
+    object_class->dispose = h2o_xs_window_dispose;
 }
 
 H2OxsWindow *
@@ -51,7 +66,7 @@ h2o_xs_window_new (H2OxsApp *app)
 
     w->search_button = gtk_menu_button_new ();
     gtk_button_set_image (GTK_BUTTON (w->search_button),
-                          gtk_image_new_from_icon_name ("edit-find-symbolic", 1));
+                          gtk_image_new_from_icon_name ("text-editor-symbolic", 1));
     gtk_header_bar_pack_start (GTK_HEADER_BAR (w->header),
                                w->search_button);
     gtk_widget_show_all (w->header);
@@ -60,15 +75,36 @@ h2o_xs_window_new (H2OxsApp *app)
     gtk_container_add (GTK_CONTAINER (w), w->body);
     gtk_widget_show_all (w->body);
 
-    show_no_account (H2O_XS_WINDOW (w));
+
+    w->accounts = NULL;
+    load_accounts (w);
 
     return w;
+}
+
+void
+load_accounts (H2OxsWindow *w) {
+    if (!w->accounts || g_list_length (w->accounts) == 0) {
+        g_list_free_full (w->accounts, g_object_unref);
+        w->accounts = NULL;
+    }
+
+    w->accounts = h2o_xs_social_twitter_accounts ();
+
+    if (!w->accounts || g_list_length (w->accounts) == 0) {
+        show_no_account (w);
+    } else {
+        show_timeline (w, (H2OxsOauth*) g_list_nth_data (w->accounts, 0));
+    }
 }
 
 void
 show_no_account (H2OxsWindow *w) {
     GtkWidget *label = gtk_label_new ("There's no account");
     GtkWidget *button = gtk_button_new_with_label ("Add an account");
+
+    g_signal_connect (G_OBJECT (button), "clicked",
+                      G_CALLBACK (h2o_xs_social_twitter_account_popup), w);
 
     gtk_label_set_markup (GTK_LABEL (label), "<span font_size=\"xx-large\">There's no account</span>");
 
@@ -80,4 +116,12 @@ show_no_account (H2OxsWindow *w) {
 
     gtk_container_add (GTK_CONTAINER (w->body), w->no_account);
     gtk_widget_show_all (w->no_account);
+}
+
+void
+show_timeline (H2OxsWindow *w, H2OxsOauth *oauth)
+{
+    GtkWidget *label = gtk_label_new (h2o_xs_oauth_get_screen_name (oauth));
+    gtk_container_add (GTK_CONTAINER (w->body), label);
+    gtk_widget_show (label);
 }

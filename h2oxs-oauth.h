@@ -34,6 +34,13 @@ void            h2o_xs_oauth_set_api_key      (H2OxsOauth *oauth,
 void            h2o_xs_oauth_set_api_secret   (H2OxsOauth *oauth,
                                                char *secret);
 
+void            h2o_xs_oauth_set_token        (H2OxsOauth *oauth,
+                                               char *token);
+void            h2o_xs_oauth_set_token_secret (H2OxsOauth *oauth,
+                                               char *token_secret);
+void            h2o_xs_oauth_set_screen_name  (H2OxsOauth *oauth,
+                                               char *screen_name, char *user_id);
+
 char*           h2o_xs_oauth_get              (H2OxsOauth *oauth,
                                                char *url);
 

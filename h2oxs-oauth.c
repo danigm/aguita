@@ -24,13 +24,40 @@ G_DEFINE_TYPE(H2OxsOauth, h2o_xs_oauth, G_TYPE_OBJECT);
 
 
 static void
+h2o_xs_oauth_dispose (GObject *object)
+{
+    H2OxsOauth *oauth = H2O_XS_OAUTH (object);
+    if (oauth->api_key)
+        g_free (oauth->api_key);
+    if (oauth->api_secret)
+        g_free (oauth->api_secret);
+    if (oauth->user_id)
+        g_free (oauth->user_id);
+    if (oauth->screen_name)
+        g_free (oauth->screen_name);
+
+    G_OBJECT_CLASS (h2o_xs_oauth_parent_class)->dispose (object);
+}
+
+
+static void
 h2o_xs_oauth_init (H2OxsOauth *oauth)
 {
+    oauth->api_key = g_strdup ("FKQ82rveOOTIrzcEn6l4xKm1h");
+    oauth->api_secret = g_strdup ("PXPOHfau2SeEQW5sVLjNIhP3vuuXJJokCFtKAHMADu7VZRm6pk");
+
+    oauth->token = NULL;
+    oauth->token_secret = NULL;
+
+    oauth->user_id = NULL;
+    oauth->screen_name = NULL;
 }
 
 static void
 h2o_xs_oauth_class_init (H2OxsOauthClass *class)
 {
+    GObjectClass *object_class = G_OBJECT_CLASS (class);
+    object_class->dispose = h2o_xs_oauth_dispose;
 }
 
 H2OxsOauth *
@@ -179,6 +206,10 @@ h2o_xs_oauth_verify (H2OxsOauth *oauth, char *request_token_uri, char *code)
     if (req_hdr) free(req_hdr);
     if (http_hdr) g_free(http_hdr);
 
+    if (!oauth->screen_name) {
+        return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -216,6 +247,25 @@ void
 h2o_xs_oauth_set_api_secret (H2OxsOauth *oauth, char *secret)
 {
     oauth->api_secret = secret;
+}
+
+void
+h2o_xs_oauth_set_token (H2OxsOauth *oauth, char *token)
+{
+    oauth->token = token;
+}
+
+void
+h2o_xs_oauth_set_token_secret (H2OxsOauth *oauth, char *token_secret)
+{
+    oauth->token_secret = token_secret;
+}
+
+void
+h2o_xs_oauth_set_screen_name (H2OxsOauth *oauth, char *screen_name, char *user_id)
+{
+    oauth->screen_name = screen_name;
+    oauth->user_id = user_id;
 }
 
 char*
