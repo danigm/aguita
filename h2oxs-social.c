@@ -165,18 +165,17 @@ GList* h2o_xs_social_twitter_accounts () {
     gchar **groups = g_key_file_get_groups (conf, &size);
     for (i=0; i<size; i++) {
         gchar *group = groups[i];
-        gchar *tk, *tks, *sn, *uid;
+        gchar *tk, *tks, *sn;
 
         tk = g_key_file_get_string(conf, group, "token", &error);
         tks = g_key_file_get_string(conf, group, "token_secret", &error);
         sn = g_key_file_get_string(conf, group, "screen_name", &error);
-        uid = g_key_file_get_string(conf, group, "user_id", &error);
 
         H2OxsOauth *auth = h2o_xs_oauth_new ();
 
         h2o_xs_oauth_set_token (auth, tk);
         h2o_xs_oauth_set_token_secret (auth, tks);
-        h2o_xs_oauth_set_screen_name (auth, sn, uid);
+        h2o_xs_oauth_set_screen_name (auth, sn);
 
         accounts = g_list_prepend (accounts, auth);
     }
@@ -186,15 +185,13 @@ GList* h2o_xs_social_twitter_accounts () {
     return accounts;
 }
 
-char*
+gchar*
 h2o_xs_social_twitter_new (H2OxsOauth *oauth) {
-    char *ret = NULL;
+    gchar *ret = NULL;
 
-    h2o_xs_oauth_request_token (oauth, "https://api.twitter.com/oauth/request_token");
-
-    ret = g_strdup_printf ("https://api.twitter.com/oauth/authorize?oauth_token=%s&oauth_token_secret=%s",
-              h2o_xs_oauth_get_token(oauth),
-              h2o_xs_oauth_get_token_secret(oauth));
+    h2o_xs_oauth_request_token (oauth, "https://api.twitter.com/");
+    ret = g_strdup_printf ("https://api.twitter.com/oauth/authorize?oauth_token=%s",
+              h2o_xs_oauth_get_token(oauth));
 
     return ret;
 }
@@ -202,7 +199,7 @@ h2o_xs_social_twitter_new (H2OxsOauth *oauth) {
 int h2o_xs_social_twitter_confirm (H2OxsOauth *oauth, gchar *code)
 {
     int success = FALSE;
-    success = h2o_xs_oauth_verify (oauth, "https://api.twitter.com/oauth/access_token", code);
+    success = h2o_xs_oauth_verify (oauth, "https://api.twitter.com/", code);
     if (success) {
         h2o_xs_social_twitter_store (oauth);
         return TRUE;
@@ -217,12 +214,10 @@ void h2o_xs_social_twitter_store (H2OxsOauth *oauth)
     GKeyFile *conf = get_config ();
     const char *cpath = config_path();
     char *name = h2o_xs_oauth_get_screen_name (oauth);
-    char *id = h2o_xs_oauth_get_user_id (oauth);
     char *tk = h2o_xs_oauth_get_token (oauth);
     char *tks = h2o_xs_oauth_get_token_secret (oauth);
 
     g_key_file_set_value (conf, name, "screen_name", name);
-    g_key_file_set_value (conf, name, "user_id", id);
     g_key_file_set_value (conf, name, "token", tk);
     g_key_file_set_value (conf, name, "token_secret", tks);
 
