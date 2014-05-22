@@ -123,5 +123,6 @@ show_timeline (H2OxsWindow *w, H2OxsOauth *oauth)
 {
     GtkWidget *label = gtk_label_new (h2o_xs_oauth_get_screen_name (oauth));
     gtk_container_add (GTK_CONTAINER (w->body), label);
+    h2o_xs_social_twitter_home (oauth);
     gtk_widget_show (label);
 }

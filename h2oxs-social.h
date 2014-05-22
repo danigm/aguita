@@ -4,6 +4,7 @@
 #include "h2oxs-win.h"
 #include "h2oxs-oauth.h"
 #include <gtk/gtk.h>
+#include <json-glib/json-glib.h>
 
 
 /** Twitter api **/
@@ -16,6 +17,6 @@ char* h2o_xs_social_twitter_new (H2OxsOauth *oauth);
 int h2o_xs_social_twitter_confirm (H2OxsOauth *oauth, gchar *code);
 void h2o_xs_social_twitter_store (H2OxsOauth *oauth);
 
-//void h2o_xs_social_twitter_home ();
+void h2o_xs_social_twitter_home (H2OxsOauth *oauth);
 
 #endif // H2O_XS_SOCIAL

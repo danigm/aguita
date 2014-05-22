@@ -230,4 +230,27 @@ void h2o_xs_social_twitter_store (H2OxsOauth *oauth)
     g_key_file_free (conf);
 }
 
-//void h2o_xs_social_twitter_home ();
+void h2o_xs_social_twitter_home (H2OxsOauth *oauth)
+{
+    int i;
+    JsonParser *parser = NULL;
+    parser = h2o_xs_oauth_query (oauth, "GET",
+                                 "https://api.twitter.com/",
+                                 "1.1/statuses/home_timeline.json",
+                                 NULL);
+
+    JsonNode *root = json_parser_get_root (parser);
+    JsonArray *arr = json_node_get_array (root);
+    JsonObject *obj = NULL;
+    JsonObject *user = NULL;
+
+    for (i=0; i< json_array_get_length (arr); i++) {
+        obj = json_array_get_object_element (arr, i);
+        user = json_object_get_object_member (obj, "user");
+        g_printf ("%s: %s\n",
+                  json_object_get_string_member (user, "screen_name"),
+                  json_object_get_string_member (obj, "text"));
+    }
+
+    g_object_unref (parser);
+}

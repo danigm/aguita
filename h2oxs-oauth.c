@@ -1,6 +1,5 @@
 #include "h2oxs-oauth.h"
 #include <rest/oauth-proxy.h>
-#include <json-glib/json-glib.h>
 
 struct _H2OxsOauth
 {
@@ -133,6 +132,7 @@ h2o_xs_oauth_verify (H2OxsOauth *oauth, char *api_url, char *code)
 
     oauth->screen_name = g_strdup (json_object_get_string_member (obj, "screen_name"));
 
+    g_object_unref (parser);
     g_object_unref (call);
     g_object_unref (proxy);
 
@@ -185,4 +185,46 @@ void
 h2o_xs_oauth_set_screen_name (H2OxsOauth *oauth, char *screen_name)
 {
     oauth->screen_name = screen_name;
+}
+
+JsonParser *
+h2o_xs_oauth_query (H2OxsOauth *oauth, char *method, char *api_url, char *resource, ...)
+{
+    va_list params;
+    RestProxy *proxy;
+    RestProxyCall *call;
+    GError *error = NULL;
+
+    proxy = oauth_proxy_new_with_token (oauth->api_key,
+            oauth->api_secret,
+            oauth->token,
+            oauth->token_secret,
+            api_url, FALSE);
+
+    call = rest_proxy_new_call (proxy);
+    rest_proxy_call_set_function (call, resource);
+    rest_proxy_call_set_method (call, method);
+
+    va_start (params, resource);
+    rest_proxy_call_add_params_from_valist (call, params);
+    va_end (params);
+
+    if (!rest_proxy_call_sync (call, &error)) {
+        g_printf ("Cannot make call: %s\n", error->message);
+        g_object_unref (call);
+        g_object_unref (proxy);
+        return NULL;
+    }
+
+    JsonParser *parser = json_parser_new ();
+
+    json_parser_load_from_data (parser,
+                                rest_proxy_call_get_payload (call),
+                                rest_proxy_call_get_payload_length (call),
+                                NULL);
+
+    g_object_unref (call);
+    g_object_unref (proxy);
+
+    return parser;
 }
