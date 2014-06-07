@@ -1,5 +1,6 @@
 #include "h2oxs-social.h"
 #include "h2oxs-oauth.h"
+#include "h2oxs-message.h"
 #include <gio/gio.h>
 
 static H2OxsOauth *assistant_oauth = NULL;
@@ -230,7 +231,7 @@ void h2o_xs_social_twitter_store (H2OxsOauth *oauth)
     g_key_file_free (conf);
 }
 
-void h2o_xs_social_twitter_home (H2OxsOauth *oauth)
+void h2o_xs_social_twitter_home (H2OxsOauth *oauth, GtkWidget *listbox)
 {
     int i;
     JsonParser *parser = NULL;
@@ -244,12 +245,22 @@ void h2o_xs_social_twitter_home (H2OxsOauth *oauth)
     JsonObject *obj = NULL;
     JsonObject *user = NULL;
 
+    H2OxsMessage *msg;
+    H2OxsMessageRow *msg_row;
+
     for (i=0; i< json_array_get_length (arr); i++) {
         obj = json_array_get_object_element (arr, i);
         user = json_object_get_object_member (obj, "user");
-        g_printf ("%s: %s\n",
-                  json_object_get_string_member (user, "screen_name"),
-                  json_object_get_string_member (obj, "text"));
+
+        msg = h2o_xs_message_new ();
+        msg->message = g_strdup (json_object_get_string_member (obj, "text"));
+        msg->sender_nick = g_strdup (json_object_get_string_member (user, "screen_name"));
+        msg->sender_name = g_strdup (json_object_get_string_member (user, "name"));
+        msg->avatar = g_strdup (json_object_get_string_member (user, "profile_image_url"));
+
+        msg_row = h2o_xs_message_row_new (msg);
+        gtk_widget_show_all (GTK_WIDGET (msg_row));
+        gtk_container_add (GTK_CONTAINER (listbox), GTK_WIDGET (msg_row));
     }
 
     g_object_unref (parser);

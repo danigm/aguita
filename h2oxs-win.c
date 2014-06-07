@@ -15,6 +15,7 @@ struct _H2OxsWindow
     GtkWidget *header;
     GtkWidget *body;
     GtkWidget *search_button;
+    GtkWidget *timeline;
 
     GtkWidget *no_account;
 
@@ -121,8 +122,13 @@ show_no_account (H2OxsWindow *w) {
 void
 show_timeline (H2OxsWindow *w, H2OxsOauth *oauth)
 {
-    GtkWidget *label = gtk_label_new (h2o_xs_oauth_get_screen_name (oauth));
-    gtk_container_add (GTK_CONTAINER (w->body), label);
-    h2o_xs_social_twitter_home (oauth);
-    gtk_widget_show (label);
+    w->timeline = gtk_list_box_new ();
+
+    GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_container_add (GTK_CONTAINER (scrolled), w->timeline);
+    gtk_box_pack_start (GTK_BOX (w->body), scrolled, TRUE, TRUE, 0);
+
+    h2o_xs_social_twitter_home (oauth, w->timeline);
+    gtk_widget_show_all (w->body);
 }
