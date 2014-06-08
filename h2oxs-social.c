@@ -231,36 +231,59 @@ void h2o_xs_social_twitter_store (H2OxsOauth *oauth)
     g_key_file_free (conf);
 }
 
-void h2o_xs_social_twitter_home (H2OxsOauth *oauth, GtkWidget *listbox)
+void h2o_xs_social_twitter_home (H2OxsOauth *oauth, GtkWidget *listbox, Timeline *timeline)
 {
     int i;
     JsonParser *parser = NULL;
-    parser = h2o_xs_oauth_query (oauth, "GET",
-                                 "https://api.twitter.com/",
-                                 "1.1/statuses/home_timeline.json",
-                                 NULL);
-
-    JsonNode *root = json_parser_get_root (parser);
-    JsonArray *arr = json_node_get_array (root);
+    JsonNode *root = NULL;
+    JsonArray *arr = NULL;
     JsonObject *obj = NULL;
     JsonObject *user = NULL;
 
     H2OxsMessage *msg;
     H2OxsMessageRow *msg_row;
 
-    for (i=0; i< json_array_get_length (arr); i++) {
-        obj = json_array_get_object_element (arr, i);
-        user = json_object_get_object_member (obj, "user");
+    if (timeline && timeline->since_id[0]) {
+        parser = h2o_xs_oauth_query (oauth, "GET",
+                                     "https://api.twitter.com/",
+                                     "1.1/statuses/home_timeline.json",
+                                     "since_id", timeline->since_id, NULL);
+    } else {
+        parser = h2o_xs_oauth_query (oauth, "GET",
+                                     "https://api.twitter.com/",
+                                     "1.1/statuses/home_timeline.json",
+                                     NULL);
+    }
 
-        msg = h2o_xs_message_new ();
-        msg->message = g_strdup (json_object_get_string_member (obj, "text"));
-        msg->sender_nick = g_strdup (json_object_get_string_member (user, "screen_name"));
-        msg->sender_name = g_strdup (json_object_get_string_member (user, "name"));
-        msg->avatar = g_strdup (json_object_get_string_member (user, "profile_image_url"));
+    if (!parser) {
+        return;
+    }
 
-        msg_row = h2o_xs_message_row_new (msg);
-        gtk_widget_show_all (GTK_WIDGET (msg_row));
-        gtk_container_add (GTK_CONTAINER (listbox), GTK_WIDGET (msg_row));
+    root = json_parser_get_root (parser);
+    arr = json_node_get_array (root);
+
+    if (arr) {
+        g_printf ("%d\n", json_array_get_length (arr)-1);
+        for (i=json_array_get_length (arr)-1; i>=0; i--) {
+            obj = json_array_get_object_element (arr, i);
+            user = json_object_get_object_member (obj, "user");
+
+            if (timeline && i == 0) {
+                g_snprintf (timeline->since_id, 30, "%s", json_object_get_string_member (user, "id_str"));
+            }
+
+            msg = h2o_xs_message_new ();
+            msg->message = g_strdup (json_object_get_string_member (obj, "text"));
+            msg->sender_nick = g_strdup (json_object_get_string_member (user, "screen_name"));
+            msg->sender_name = g_strdup (json_object_get_string_member (user, "name"));
+            msg->avatar = g_strdup (json_object_get_string_member (user, "profile_image_url"));
+
+            msg_row = h2o_xs_message_row_new (msg);
+            gtk_widget_show_all (GTK_WIDGET (msg_row));
+            gtk_list_box_prepend (GTK_LIST_BOX (listbox), GTK_WIDGET (msg_row));
+        }
+    } else {
+        g_printf ("NO\n");
     }
 
     g_object_unref (parser);

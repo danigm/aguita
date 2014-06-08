@@ -21,6 +21,7 @@ struct _H2OxsWindow
 
     // The list of H2OxsOauth
     GList *accounts;
+    Timeline social_timeline;
 };
 
 
@@ -76,6 +77,9 @@ h2o_xs_window_new (H2OxsApp *app)
     gtk_container_add (GTK_CONTAINER (w), w->body);
     gtk_widget_show_all (w->body);
 
+    w->social_timeline.w = NULL;
+    w->social_timeline.o = NULL;
+    w->social_timeline.since_id[0] = 0;
 
     w->accounts = NULL;
     load_accounts (w);
@@ -119,16 +123,29 @@ show_no_account (H2OxsWindow *w) {
     gtk_widget_show_all (w->no_account);
 }
 
+
+gboolean
+reload (gpointer user_data)
+{
+    H2OxsWindow *w = H2O_XS_WINDOW (user_data);
+    h2o_xs_social_twitter_home (w->social_timeline.o, w->timeline, &(w->social_timeline));
+    g_printf ("RELOADING\n");
+}
+
 void
 show_timeline (H2OxsWindow *w, H2OxsOauth *oauth)
 {
     w->timeline = gtk_list_box_new ();
 
+    w->social_timeline.w = w;
+    w->social_timeline.o = oauth;
+
     GtkWidget *scrolled = gtk_scrolled_window_new (NULL, NULL);
     gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_container_add (GTK_CONTAINER (scrolled), w->timeline);
     gtk_box_pack_start (GTK_BOX (w->body), scrolled, TRUE, TRUE, 0);
+    g_timeout_add (60000, reload, w);
 
-    h2o_xs_social_twitter_home (oauth, w->timeline);
+    h2o_xs_social_twitter_home (oauth, w->timeline, &(w->social_timeline));
     gtk_widget_show_all (w->body);
 }

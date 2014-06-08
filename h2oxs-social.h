@@ -6,6 +6,14 @@
 #include <gtk/gtk.h>
 #include <json-glib/json-glib.h>
 
+typedef struct _Timeline Timeline;
+
+struct _Timeline {
+    H2OxsWindow *w;
+    H2OxsOauth *o;
+    char since_id[30];
+};
+
 
 /** Twitter api **/
 void h2o_xs_social_twitter_account_popup (GtkWidget *widget, H2OxsWindow *win);
@@ -17,6 +25,6 @@ char* h2o_xs_social_twitter_new (H2OxsOauth *oauth);
 int h2o_xs_social_twitter_confirm (H2OxsOauth *oauth, gchar *code);
 void h2o_xs_social_twitter_store (H2OxsOauth *oauth);
 
-void h2o_xs_social_twitter_home (H2OxsOauth *oauth, GtkWidget *listbox);
+void h2o_xs_social_twitter_home (H2OxsOauth *oauth, GtkWidget *listbox, Timeline *timeline);
 
 #endif // H2O_XS_SOCIAL
